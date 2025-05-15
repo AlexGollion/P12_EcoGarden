@@ -11,14 +11,17 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\User;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Repository\UserRepository;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class UserController extends AbstractController
 {
     #[Route('/api/user', name: 'app_user', methods: ['POST'])]
-    public function createUer(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer): JsonResponse
+    public function createUer(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, UserPasswordHasherInterface $hasher): JsonResponse
     {
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
         $user->setRoles(['ROLE_USER']);
+        $hashPassword = $hasher->hashPassword($user, $user->getPassword());
+        $user->setPassword($hashPassword);
         $entityManager->persist($user);
         $entityManager->flush();
 
@@ -26,6 +29,15 @@ final class UserController extends AbstractController
 
         return new JsonResponse([
             $jsonUser, Response::HTTP_CREATED, [], true
+        ]);
+    }
+
+    #[Route('/api/debug', name: 'app_debug', methods: ['GET'])]
+    public function debugHeaders(Request $request): JsonResponse    
+    {
+        return new JsonResponse([
+            'authorization' => $request->headers->get('Authorization'),
+            'headers' => $request->headers->all(),
         ]);
     }
 }
