@@ -10,8 +10,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\User;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Repository\UserRepository;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
 
 final class UserController extends AbstractController
 {
@@ -30,6 +33,37 @@ final class UserController extends AbstractController
         return new JsonResponse([
             $jsonUser, Response::HTTP_CREATED, [], true
         ]);
+    }
+
+    #[Route('/api/user/{id}', name: 'app_users_edit', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function editUser(Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager,
+         User $curretnUser, UserPasswordHasherInterface $hasher): JsonResponse
+    {
+        $updatedUser = $serializer->deserialize($request->getContent(), 
+            User::class,
+            'json',
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $curretnUser]);
+        
+        $content = $request->toArray();
+        $password = $content['password'];
+        $passwordHash = $hasher->hashPassword($updatedUser, $password);
+        $updatedUser->setPassword($passwordHash);
+
+        $entityManager->persist($updatedUser);
+        $entityManager->flush();
+
+        return new JsonResponse([null, Response::HTTP_NO_CONTENT]);
+    }
+
+    #[Route('/api/user/{id}', name: 'app_user_delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function deleteUser(User $user, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $entityManager->remove($user);
+        $entityManager->flush();
+
+        return new JsonResponse([null, Response::HTTP_NO_CONTENT]);
     }
 
     #[Route('/api/debug', name: 'app_debug', methods: ['GET'])]
