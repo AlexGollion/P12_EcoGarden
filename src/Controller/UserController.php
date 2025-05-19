@@ -14,7 +14,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Repository\UserRepository;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final class UserController extends AbstractController
 {
@@ -38,12 +38,12 @@ final class UserController extends AbstractController
     #[Route('/api/user/{id}', name: 'app_users_edit', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN')]
     public function editUser(Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager,
-         User $curretnUser, UserPasswordHasherInterface $hasher): JsonResponse
+         User $currentUser, UserPasswordHasherInterface $hasher): JsonResponse
     {
         $updatedUser = $serializer->deserialize($request->getContent(), 
             User::class,
             'json',
-            [AbstractNormalizer::OBJECT_TO_POPULATE => $curretnUser]);
+            [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
         
         $content = $request->toArray();
         $password = $content['password'];
@@ -58,8 +58,9 @@ final class UserController extends AbstractController
 
     #[Route('/api/user/{id}', name: 'app_user_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function deleteUser(User $user, EntityManagerInterface $entityManager): JsonResponse
+    public function deleteUser(User $user, EntityManagerInterface $entityManager, TagAwareCacheInterface $cachePool): JsonResponse
     {
+        $cachePool->invalidateTags(["meteoCache"]);
         $entityManager->remove($user);
         $entityManager->flush();
 
