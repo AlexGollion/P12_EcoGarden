@@ -26,9 +26,9 @@ final class AdviceController extends AbstractController
         $adviceList = $adviceRepository->findByMonth($month);
         $jsonAdivceList = $serializer->serialize($adviceList, 'json');
 
-        return new JsonResponse([
+        return new JsonResponse(
             $jsonAdivceList, Response::HTTP_OK, [], true
-        ]);
+        );
     }
     
     #[Route('/api/advices/{id}', name: 'app_advices_month', methods: ['GET'])]
@@ -39,9 +39,9 @@ final class AdviceController extends AbstractController
         $adviceList = $adviceRepository->findByMonth($id);
     
         $jsonAdviceList = $serializer->serialize($adviceList, 'json');
-        return new JsonResponse([
+        return new JsonResponse(
             $jsonAdviceList, Response::HTTP_OK, [], true
-        ]);
+        );
     }
 
     #[Route('/api/advices', name: 'app_advices_post', methods: ['POST'])]
@@ -61,9 +61,9 @@ final class AdviceController extends AbstractController
 
         $location = $urlGenerator->generate('app_advices_month', ['id' => $advice->getMonth()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        return new JsonResponse([
+        return new JsonResponse(
             $jsonAdvice, Response::HTTP_CREATED, ["Location" => $location], true
-        ]);
+        );
     }
 
     #[Route('/api/advices/{id}', name: 'app_advices_edit', methods: ['PUT'])]
@@ -89,20 +89,14 @@ final class AdviceController extends AbstractController
 
         $idMonth = $advice->getMonth();
 
-        if ($idMonth <1 || $idMonth > 12) {
-            /*return new JsonResponse([
-                ['message' => 'Month must be between 1 and 12'], Response::HTTP_BAD_REQUEST, [], true
-            ]);*/
-            throw new HttpException(JsonResponse::HTTP_BAD_REQUEST, "Error Processing Request");
-            
-        }
+        $this->monthCheck($idMonth);
             
         $entityManager->persist($advice);
         $entityManager->flush();
     
         $jsonAdvice = $serializer->serialize($advice, 'json');
 
-        return new JsonResponse([null, Response::HTTP_NO_CONTENT]);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/api/advices/{id}', name: 'app_advices_delete', methods: ['DELETE'])]
@@ -113,10 +107,10 @@ final class AdviceController extends AbstractController
         $entityManager->remove($advice);
         $entityManager->flush();
     
-        return new JsonResponse([null, Response::HTTP_NO_CONTENT]);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
-    private function monthCheck(int $idMonth) : void 
+    private function monthCheck(int $idMonth) : JsonResponse 
     {
         if ($idMonth <1 || $idMonth > 12) {
             throw new HttpException(JsonResponse::HTTP_BAD_REQUEST, "Month must be between 1 and 12");

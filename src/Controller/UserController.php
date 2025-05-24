@@ -53,7 +53,7 @@ final class UserController extends AbstractController
         $entityManager->persist($updatedUser);
         $entityManager->flush();
 
-        return new JsonResponse([null, Response::HTTP_NO_CONTENT]);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/api/user/{id}', name: 'app_user_delete', methods: ['DELETE'])]
@@ -64,7 +64,7 @@ final class UserController extends AbstractController
         $entityManager->remove($user);
         $entityManager->flush();
 
-        return new JsonResponse([null, Response::HTTP_NO_CONTENT]);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/api/debug', name: 'app_debug', methods: ['GET'])]
