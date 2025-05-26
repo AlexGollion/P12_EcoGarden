@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
@@ -18,6 +19,14 @@ use App\Repository\UserRepository;
 #[IsGranted('ROLE_USER')]
 final class ExternalApiController extends AbstractController
 {
+    private $parameterBag;
+    private $apiKey;
+
+    public function __construct(ParameterBagInterface $parameterBag)
+    {
+        $this->parameterBag = $parameterBag;
+        $this->apiKey = $this->parameterBag->get('app.external_api_key');
+    }
     #[Route('/api/meteo/{ville}', name: 'app_external_api_ville', methods: ['GET'])]
     public function getMeteoVille(HttpClientInterface $httpClient, string $ville, TagAwareCacheInterface $cachePool,
         SerializerInterface $serializer): JsonResponse
@@ -31,7 +40,7 @@ final class ExternalApiController extends AbstractController
                 $item->expiresAt(new \DateTime("+2 days"));
                 $response = $httpClient->request(
                     'GET',
-                    "https://api.openweathermap.org/data/2.5/weather?q=$ville,fr&appid=fe4e9dbc3fcb4ae6531a843c7ed4b732"
+                    "https://api.openweathermap.org/data/2.5/weather?q=$ville,fr&appid=$this->apiKey"
                 );
                 $data = $response->toArray();
                 return $data;
@@ -58,7 +67,7 @@ final class ExternalApiController extends AbstractController
 
         $response = $httpClient->request(
             'GET',
-            "https://api.openweathermap.org/data/2.5/weather?q=$postCode,fr&appid=fe4e9dbc3fcb4ae6531a843c7ed4b732"
+            "https://api.openweathermap.org/data/2.5/weather?q=$postCode,fr&appid=$this->apiKey"
         );
 
         if ($response->getStatusCode() == 404) {
