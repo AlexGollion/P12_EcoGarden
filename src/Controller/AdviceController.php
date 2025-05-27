@@ -110,10 +110,14 @@ final class AdviceController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
-    private function monthCheck(int $idMonth) : JsonResponse 
+    private function monthCheck(int $idMonth) : JsonResponse|null
     {
         if ($idMonth <1 || $idMonth > 12) {
             throw new HttpException(JsonResponse::HTTP_BAD_REQUEST, "Month must be between 1 and 12");
+        }
+        else 
+        {
+            return null;
         }
     }
 }
